@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>M26 Motorbike - Smart Operations & Multi-Branch Analytics Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Pyidaungsu:wght@400;700&display=swap');
+        body { font-family: 'Pyidaungsu', sans-serif; }
+        @media print {
+            body { background: white; color: black; }
+            .no-print { display: none !important; }
+            .print-card { border: 1px solid #ccc !important; box-shadow: none !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-gray-800">
+
+    <div class="max-w-7xl mx-auto px-4 py-6">
+        <!-- Header Section -->
+        <div class="no-print bg-gradient-to-r from-slate-900 to-slate-800 text-white p-6 rounded-xl shadow-lg mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div>
+                <h1 class="text-2xl md:text-3xl font-bold tracking-tight">M26 MOTORBIKE SHOWROOM</h1>
+                <p class="text-slate-400 text-sm mt-1">Multi-Branch Conversion & Advanced Performance Analytics Dashboard</p>
+            </div>
+            <!-- Backup & Restore Controls -->
+            <div class="flex flex-wrap gap-2 text-xs">
+                <button onclick="exportJSONBackup()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-3 rounded-lg shadow transition">
+                    💾 Backup ယူရန်
+                </button>
+                <label class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 px-3 rounded-lg shadow transition cursor-pointer">
+                    📂 Backup ပြန်သွင်းရန်
+                    <input type="file" id="importFile" accept=".json" class="hidden" onchange="importJSONBackup(event)">
+                </label>
+                <button onclick="exportExcelCSV()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-3 rounded-lg shadow transition">
+                    📊 Excel (CSV) ထုတ်ရန်
+                </button>
+            </div>
+        </div>
+
+        <!-- Printable Daily Report Template -->
+        <div id="printableReport" class="hidden bg-white p-10 rounded-xl border-2 border-gray-400 mb-8 max-w-4xl mx-auto">
+            <div class="text-center border-b-2 border-gray-800 pb-4 mb-6">
+                <h1 class="text-3xl font-bold text-slate-900 tracking-wide">M26 MOTORBIKE SHOWROOM</h1>
+                <p class="text-md text-gray-700 font-bold uppercase tracking-widest mt-1">နေ့စဉ် လုပ်ငန်းဆောင်ရွက်မှု အစီရင်ခံစာ (Daily Performance Report)</p>
+                <p id="printReportBranch" class="text-md font-bold text-slate-800 mt-1">ဆိုင်ခွဲ - </p>
+                <p id="printReportDate" class="text-lg font-bold text-blue-600 mt-1">နေ့စွဲ - --/--/----</p>
+            </div>
+            
+            <div class="grid grid-cols-4 gap-4 mb-8 text-center">
+                <div class="border-2 border-slate-300 p-3 rounded-lg bg-slate-50">
+                    <p class="text-xs font-bold text-slate-600">စုစုပေါင်း ဝင်ရောက်သူ</p>
+                    <p id="printTotalWalkin" class="text-2xl font-bold text-slate-800 mt-1">0 ဦး</p>
+                    <p id="printWalkinBreakdown" class="text-[11px] text-gray-500 mt-1">(Retail: 0 | Wholesale: 0)</p>
+                </div>
+                <div class="border-2 border-green-300 p-3 rounded-lg bg-green-50">
+                    <p class="text-xs font-bold text-green-700">အရောင်းအောင်မြင်မှု</p>
+                    <p id="printSalesClosed" class="text-2xl font-bold text-green-700 mt-1">0 စီး</p>
+                    <p id="printSalesBreakdown" class="text-[11px] text-green-600 mt-1">(Retail: 0 | Wholesale: 0)</p>
+                </div>
+                <div class="border-2 border-blue-300 p-3 rounded-lg bg-blue-50">
+                    <p class="text-xs font-bold text-blue-700">ဝယ်ယူမှုနှုန်း (Conversion)</p>
+                    <p id="printConvRate" class="text-2xl font-bold text-blue-800 mt-1">0%</p>
+                </div>
+                <div class="border-2 border-red-300 p-3 rounded-lg bg-red-50">
+                    <p class="text-xs font-bold text-red-700">လက်လွတ်သွားသော စီးရေ</p>
+                    <p id="printTotalLost" class="text-2xl font-bold text-red-600 mt-1">0 ဦး</p>
+                </div>
+            </div>
+
+            <div class="border-2 border-slate-300 rounded-xl p-6 bg-white mb-6">
+                <h3 class="text-lg font-bold text-red-600 border-b pb-2 mb-4">⚠️ မဝယ်ဖြစ်ရသည့် အကြောင်းအရင်းများအား ခွဲခြမ်းစိတ်ဖြာခြင်း (Lost Sales Analysis)</h3>
+                <table class="w-full text-base mb-4">
+                    <thead>
+                        <tr class="border-b-2 border-slate-300 bg-slate-100 font-bold text-slate-700">
+                            <th class="py-2 text-left px-3">အကြောင်းအရင်း အချက်အလက်များ</th>
+                            <th class="py-2 text-right px-3">အရေအတွက်</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-200">
+                        <tr>
+                            <td class="py-3 px-3 text-gray-700">
+                                <div>၁။ လိုချင်သော ဆိုင်ကယ်အမျိုးအစား စတော့မရှိခြင်း (Stock Not Available)</div>
+                                <div id="printStockDetails" class="text-sm text-blue-600 font-bold mt-1 pl-4 bg-blue-50 rounded p-1 hidden"></div>
+                            </td>
+                            <td id="printNoStock" class="py-3 px-3 font-bold text-right text-slate-900 align-top">0 ဦး</td>
+                        </tr>
+                        <tr><td class="py-3 px-3 text-gray-700">၂။ ဈေးနှုန်းကြီးမြင့်နေခြင်း (Price Too High)</td><td id="printHighPrice" class="py-3 px-3 font-bold text-right text-slate-900">0 ဦး</td></tr>
+                        <tr><td class="py-3 px-3 text-gray-700">၃။ အရစ်ကျစနစ်ဖြင့် ဝယ်ယူရန် စုံစမ်းခြင်း (Installment Inquiry)</td><td id="printInstallment" class="py-3 px-3 font-bold text-right text-slate-900">0 ဦး</td></tr>
+                        <tr><td class="py-3 px-3 text-gray-700">၄။ ဈေးနှုန်းစုံစမ်းရုံသက်သက် လာရောက်ခြင်း (Just Inquiry)</td><td id="printInquiry" class="py-3 px-3 font-bold text-right text-slate-900">0 ဦး</td></tr>
+                        <tr><td class="py-3 px-3 text-gray-700">၅။ အခြားအကြောင်းအရင်းများ (Other Reasons)</td><td id="printOthers" class="py-3 px-3 font-bold text-right text-slate-900">0 ဦး</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="border-2 border-slate-300 rounded-xl p-6 bg-white">
+                <h3 class="text-base font-bold text-slate-800 border-b pb-2 mb-2">📝 Operational Manager ၏ နေ့စဉ်လုပ်ငန်းသုံးသပ်ချက်နှင့် မှတ်ချက်</h3>
+                <p id="printManagerNote" class="text-sm text-gray-700 italic bg-gray-50 p-3 rounded border border-dashed">မရှိပါ။</p>
+            </div>
+            
+            <div class="mt-16 flex justify-between text-sm font-semibold text-gray-600 px-2">
+                <div class="text-center w-40 border-t border-gray-400 pt-2">ပြုစုသူ- Operational Manager</div>
+                <div class="text-center w-40 border-t border-gray-400 pt-2">စစ်ဆေးသူ- MD / CEO</div>
+            </div>
+        </div>
+
+        <!-- Printable Monthly Summary Report Template (for MD) -->
+        <div id="printableMonthlyReport" class="hidden bg-white p-10 rounded-xl border-2 border-gray-400 mb-8 max-w-4xl mx-auto">
+            <div class="text-center border-b-2 border-gray-800 pb-4 mb-6">
+                <h1 class="text-3xl font-bold text-slate-900 tracking-wide">M26 MOTORBIKE SHOWROOM</h1>
+                <p class="text-md text-gray-700 font-bold uppercase tracking-widest mt-1">လအလိုက် စွမ်းဆောင်ရည်နှင့် အမေးများသော စတော့မရှိ မော်ဒယ်များ အစီရင်ခံစာ</p>
+                <p id="printMonthlyReportBranch" class="text-md font-bold text-slate-800 mt-1">ဆိုင်ခွဲ - အားလုံး</p>
+                <p id="printMonthlyReportMonth" class="text-lg font-bold text-blue-600 mt-1">ကာလ - YYYY-MM</p>
+            </div>
+            
+            <div class="grid grid-cols-3 gap-4 mb-6 text-center">
+                <div class="border-2 border-slate-300 p-3 rounded-lg bg-slate-50">
+                    <p class="text-xs font-bold text-slate-600">စုစုပေါင်း Walk-ins (ဦး)</p>
+                    <p id="printMSumWalkin" class="text-2xl font-bold text-slate-800 mt-1">0</p>
+                    <p id="printMSumWalkinSub" class="text-xs text-gray-500 mt-1"></p>
+                </div>
+                <div class="border-2 border-green-300 p-3 rounded-lg bg-green-50">
+                    <p class="text-xs font-bold text-green-700">စုစုပေါင်း ရောင်းရစီးရေ (စီး)</p>
+                    <p id="printMSumSales" class="text-2xl font-bold text-green-700 mt-1">0</p>
+                    <p id="printMSumSalesSub" class="text-xs text-green-600 mt-1"></p>
+                </div>
+                <div class="border-2 border-purple-300 p-3 rounded-lg bg-purple-50">
+                    <p class="text-xs font-bold text-purple-700">ပျမ်းမျှ ဝယ်ယူမှုနှုန်း (%)</p>
+                    <p id="printMSumRate" class="text-2xl font-bold text-purple-800 mt-1">0%</p>
+                </div>
+            </div>
+
+            <div class="border-2 border-amber-300 rounded-xl p-6 bg-amber-50/50 mb-6">
+                <h3 class="text-base font-bold text-amber-900 border-b border-amber-200 pb-2 mb-3">🔥 လအတွင်း Customer များ အဓိက မေးမြန်းခဲ့သော စတော့မရှိသည့် ဆိုင်ကယ် မော်ဒယ်များ စာရင်း</h3>
+                <ul id="printMonthlyStockList" class="list-disc pl-5 space-y-1 text-sm font-semibold text-gray-800">
+                    <li>မရှိပါ။</li>
+                </ul>
+            </div>
+
+            <div class="mt-16 flex justify-between text-sm font-semibold text-gray-600 px-2">
+                <div class="text-center w-40 border-t border-gray-400 pt-2">ပြုစုသူ- Operational Manager</div>
+                <div class="text-center w-40 border-t border-gray-400 pt-2">စစ်ဆေးသူ- MD / CEO</div>
+            </div>
+        </div>
+
+        <!-- Main Body Content -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left Side: Data Entry Form -->
+            <div class="no-print bg-white p-6 rounded-xl shadow-md h-fit border border-gray-200">
+                <div class="flex justify-between items-center mb-4 pb-2 border-b">
+                    <h2 id="formTitle" class="text-xl font-bold text-slate-800">နေ့စဉ် ဒေတာသွင်းခြင်း</h2>
+                    <span id="editModeBadge" class="hidden bg-amber-100 text-amber-800 text-xs font-bold px-2.5 py-0.5 rounded-full border border-amber-300">ပြင်ဆင်နေဆဲ</span>
+                </div>
+                <form id="dataForm" class="space-y-4">
+                    <input type="hidden" id="editOriginalKey">
+                    
+                    <!-- Branch Selection -->
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">ဆိုင်ခွဲ ရွေးချယ်ရန် (Branch)</label>
+                        <select id="branchInput" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 font-bold text-slate-800 bg-slate-50">
+                            <option value="ရွှေနတ်တောင်">ရွှေနတ်တောင် ဆိုင်ခွဲ</option>
+                            <option value="မရမ်းကုန်း">မရမ်းကုန်း ဆိုင်ခွဲ</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">နေ့စွဲ (Date)</label>
+                        <input type="date" id="reportDate" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+                    </div>
+
+                    <!-- Customer Category breakdown -->
+                    <div class="bg-blue-50/60 p-3 rounded-lg border border-blue-200 space-y-2">
+                        <label class="block text-xs font-bold text-blue-900">၁။ ဝင်ရောက်သူ Customer (Walk-ins)</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-[11px] text-gray-600">Retail (လက်လီ ဦးရေ)</label>
+                                <input type="number" id="retailWalkin" min="0" value="0" required class="w-full px-2.5 py-1.5 border rounded-lg text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] text-gray-600">Wholesale (လက်ကား ဦးရေ)</label>
+                                <input type="number" id="wholesaleWalkin" min="0" value="0" required class="w-full px-2.5 py-1.5 border rounded-lg text-sm">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-green-50/60 p-3 rounded-lg border border-green-200 space-y-2">
+                        <label class="block text-xs font-bold text-green-900">၂။ စုစုပေါင်း အရောင်းရစီးရေ (Sales Closed Units)</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-[11px] text-gray-600">Retail ရောင်းရစီးရေ</label>
+                                <input type="number" id="retailSales" min="0" value="0" required class="w-full px-2.5 py-1.5 border rounded-lg text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] text-gray-600">Wholesale ရောင်းရစီးရေ</label>
+                                <input type="number" id="wholesaleSales" min="0" value="0" required class="w-full px-2.5 py-1.5 border rounded-lg text-sm">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-100 p-3 rounded-lg border flex justify-between items-center text-sm">
+                        <span class="font-bold text-gray-700">မဝယ်ဖြစ်သူ (Lost Customer):</span>
+                        <span id="liveLostCount" class="font-bold text-red-600 text-lg">0 ဦး</span>
+                    </div>
+
+                    <div class="pt-2 border-t mt-4">
+                        <div class="flex justify-between items-center mb-2">
+                            <p class="text-sm font-bold text-red-600">❌ မဝယ်ဖြစ်ရသည့် အကြောင်းအရင်းများ</p>
+                            <p id="liveReasonTracker" class="text-xs font-bold text-gray-500">ဖြည့်ပြီး- 0 / ကျန်- 0</p>
+                        </div>
+                        
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-xs text-gray-600 mb-1">၁။ လိုချင်တဲ့ ဆိုင်ကယ်စတော့မရှိလို့</label>
+                                <div class="flex gap-2">
+                                    <input type="number" id="reasonNoStock" min="0" value="0" class="reason-input w-20 px-3 py-1.5 border rounded-lg">
+                                    <input type="text" id="stockBikeDetails" class="flex-1 px-3 py-1.5 border rounded-lg text-xs" placeholder="ဥပမာ- Wave110, Click160 (စတော့မရှိပါ)">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-600 mb-1">၂။ ဈေးနှုန်းကြီးမြင့်နေလို့</label>
+                                <input type="number" id="reasonHighPrice" min="0" value="0" class="reason-input w-full px-3 py-1.5 border rounded-lg">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-600 mb-1">၃။ အရစ်ကျစနစ် စုံစမ်းရုံမလို့</label>
+                                <input type="number" id="reasonInstallment" min="0" value="0" class="reason-input w-full px-3 py-1.5 border rounded-lg">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-600 mb-1">၄။ ဈေးနှုန်းစုံစမ်းရုံသက်သက်မလို့</label>
+                                <input type="number" id="reasonJustInquiry" min="0" value="0" class="reason-input w-full px-3 py-1.5 border rounded-lg">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-600 mb-1">၅။ အခြားအကြောင်းအရင်းများ</label>
+                                <input type="number" id="reasonOthers" min="0" value="0" class="reason-input w-full px-3 py-1.5 border rounded-lg">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-2 border-t mt-4">
+                        <label class="block text-xs font-bold text-gray-700 mb-1">📝 Manager ၏ နေ့စဉ်သုံးသပ်ချက်/မှတ်ချက် (MD သိစေရန်)</label>
+                        <textarea id="managerNote" rows="2" class="w-full px-3 py-1.5 border rounded-lg text-xs" placeholder="အခြေအနေမှတ်ချက်ရေးရန်..."></textarea>
+                    </div>
+
+                    <div class="flex gap-2">
+                        <button type="button" id="cancelEditBtn" class="hidden flex-1 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2.5 px-4 rounded-lg shadow-md transition">
+                            မပြင်တော့ပါ
+                        </button>
+                        <button type="submit" id="submitBtn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-lg shadow-md transition">
+                            မှတ်တမ်းသိမ်းဆည်းမည်
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Right Side: Analytics, Filter & Data Logs -->
+            <div class="lg:col-span-2 space-y-8">
+                
+                <!-- Monthly & Branch Filter Control Panel -->
+                <div class="no-print bg-white p-6 rounded-xl shadow-md border border-gray-200">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 pb-2 border-b">
+                        <h2 class="text-xl font-bold text-slate-800">စာရင်းများ စစ်ဆေးခြင်းနှင့် Report ထုတ်ခြင်း</h2>
+                        
+                        <div class="flex flex-wrap items-center gap-2">
+                            <!-- Branch Filter -->
+                            <div>
+                                <select id="branchFilter" onchange="updateDashboard()" class="px-2.5 py-1.5 border rounded-lg text-xs font-bold bg-slate-100 text-slate-800">
+                                    <option value="ALL">ဆိုင်ခွဲအားလုံး (All)</option>
+                                    <option value="ရွှေနတ်တောင်">ရွှေနတ်တောင်</option>
+                                    <option value="မရမ်းကုန်း">မရမ်းကုန်း</option>
+                                </select>
+                            </div>
+
+                            <!-- Month Filter Selection -->
+                            <div class="flex items-center gap-1">
+                                <input type="month" id="monthFilter" onchange="updateDashboard()" class="px-2.5 py-1.5 border rounded-lg text-xs bg-slate-50 font-bold text-blue-600 focus:ring-2 focus:ring-blue-500">
+                                <button onclick="resetMonthFilter()" class="bg-gray-200 hover:bg-gray-300 text-xs text-gray-700 font-bold px-2 py-1.5 rounded">All</button>
+                            </div>
+
+                            <button onclick="printMonthlySummaryReport()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1.5 rounded text-xs shadow transition">
+                                🖨️ MD Report
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Overall Summary Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div class="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                            <p class="text-xs text-blue-700 font-bold">ဝင်ရောက်သူ (Walk-ins)</p>
+                            <p id="sumTotalCustomers" class="text-3xl font-bold text-blue-900 mt-1">0</p>
+                            <p id="sumWalkinSub" class="text-xs text-slate-500 mt-1">Retail: 0 | Wholesale: 0</p>
+                        </div>
+                        <div class="bg-green-50 p-4 rounded-lg border border-green-100">
+                            <p class="text-xs text-green-700 font-bold">အရောင်းရစီးရေ (Closed)</p>
+                            <p id="sumSalesClosed" class="text-3xl font-bold text-green-900 mt-1">0</p>
+                            <p id="sumSalesSub" class="text-xs text-slate-500 mt-1">Retail: 0 | Wholesale: 0</p>
+                        </div>
+                        <div class="bg-purple-50 p-4 rounded-lg border border-purple-100">
+                            <p class="text-xs text-purple-700 font-bold">ဝယ်ယူမှုနှုန်း (Conversion Rate)</p>
+                            <p id="sumConversionRate" class="text-3xl font-bold text-purple-900 mt-1">0%</p>
+                            <p class="text-[11px] text-purple-600 mt-1">Total Sales / Total Walk-ins</p>
+                        </div>
+                    </div>
+
+                    <h3 class="text-xs font-bold text-gray-700 mb-2">မဝယ်ဖြစ်ရသည့် အကြောင်းရင်း စုစုပေါင်း အချုပ်</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-5 gap-2 text-center text-xs">
+                        <div class="bg-gray-50 p-2 rounded border"><p class="text-gray-500">စတော့မရှိ</p><p id="sumNoStock" class="text-base font-bold mt-1 text-slate-800">0</p></div>
+                        <div class="bg-gray-50 p-2 rounded border"><p class="text-gray-500">ဈေးကြီး</p><p id="sumHighPrice" class="text-base font-bold mt-1 text-slate-800">0</p></div>
+                        <div class="bg-gray-50 p-2 rounded border"><p class="text-gray-500">အရစ်ကျစုံစမ်း</p><p id="sumInstallment" class="text-base font-bold mt-1 text-slate-800">0</p></div>
+                        <div class="bg-gray-50 p-2 rounded border"><p class="text-gray-500">စုံစမ်းရုံသက်သက်</p><p id="sumJustInquiry" class="text-base font-bold mt-1 text-slate-800">0</p></div>
+                        <div class="bg-gray-50 p-2 rounded border"><p class="text-gray-500">အခြား</p><p id="sumOthers" class="text-base font-bold mt-1 text-slate-800">0</p></div>
+                    </div>
+
+                    <!-- Month-over-Month Comparison Widget -->
+                    <div id="comparisonBox" class="mt-6 p-4 bg-slate-900 text-white rounded-xl hidden">
+                        <h4 id="comparisonTitle" class="text-sm font-bold text-amber-400 mb-3 border-b border-slate-700 pb-1">ယခင်လနှင့် နှိုင်းယှဉ်ချက် (Month-over-Month Comparison)</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                            <div class="bg-slate-800 p-3 rounded-lg border border-slate-700">
+                                <p class="text-slate-400">Walk-ins ဝင်ရောက်မှု ပြောင်းလဲမှု</p>
+                                <p id="cmpWalkinDiff" class="text-lg font-bold mt-1">-</p>
+                            </div>
+                            <div class="bg-slate-800 p-3 rounded-lg border border-slate-700">
+                                <p class="text-slate-400">အရောင်းရစီးရေ ပြောင်းလဲမှု</p>
+                                <p id="cmpSalesDiff" class="text-lg font-bold mt-1">-</p>
+                            </div>
+                            <div class="bg-slate-800 p-3 rounded-lg border border-slate-700">
+                                <p class="text-slate-400">Conversion Rate ပြောင်းလဲမှု</p>
+                                <p id="cmpRateDiff" class="text-lg font-bold mt-1">-</p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Data Table -->
+                <div class="bg-white p-6 rounded-xl shadow-md overflow-x-auto border border-gray-200">
+                    <div class="no-print flex justify-between items-center mb-4 pb-2 border-b">
+                        <h2 class="text-xl font-bold text-slate-800">နေ့ရက်အလိုက် မှတ်တမ်းရာဇဝင်</h2>
+                        <button onclick="clearData()" class="text-xs text-red-500 hover:text-red-700 font-semibold">မှတ်တမ်းအားလုံးဖျက်ရန်</button>
+                    </div>
+                    <table class="w-full text-left border-collapse min-w-[900px] text-xs">
+                        <thead>
+                            <tr class="bg-slate-100 text-slate-700 uppercase tracking-wider border-b font-bold">
+                                <th class="p-3">နေ့စွဲ</th>
+                                <th class="p-3">ဆိုင်ခွဲ</th>
+                                <th class="p-3">Walk-ins (R/WS)</th>
+                                <th class="p-3 text-green-700">ရောင်းရ (R/WS)</th>
+                                <th class="p-3">ဝယ်ယူမှု %</th>
+                                <th class="p-3 text-red-600">စတော့မရှိ (အမျိုးအစား)</th>
+                                <th class="p-3 text-red-600">ဈေးကြီး</th>
+                                <th class="p-3 text-red-600">အရစ်ကျ</th>
+                                <th class="p-3 text-red-600">စုံစမ်းရုံ</th>
+                                <th class="p-3 text-red-600">အခြား</th>
+                                <th class="p-3 text-center no-print">လုပ်ဆောင်ချက်</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logsTableBody" class="text-sm divide-y">
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'm26_smart_tracker_v8_multibranch';
+        let appData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+        
+        document.getElementById('reportDate').valueAsDate = new Date();
+
+        const dataForm = document.getElementById('dataForm');
+        const cancelEditBtn = document.getElementById('cancelEditBtn');
+        const formTitle = document.getElementById('formTitle');
+        const editModeBadge = document.getElementById('editModeBadge');
+        const editOriginalKey = document.getElementById('editOriginalKey');
+
+        const branchInput = document.getElementById('branchInput');
+        const retailWalkinInput = document.getElementById('retailWalkin');
+        const wholesaleWalkinInput = document.getElementById('wholesaleWalkin');
+        const retailSalesInput = document.getElementById('retailSales');
+        const wholesaleSalesInput = document.getElementById('wholesaleSales');
+        const reasonInputs = document.querySelectorAll('.reason-input');
+
+        function calculateLiveStats() {
+            const rWalk = parseInt(retailWalkinInput.value) || 0;
+            const wsWalk = parseInt(wholesaleWalkinInput.value) || 0;
+            const totalWalkins = rWalk + wsWalk;
+
+            const rSales = parseInt(retailSalesInput.value) || 0;
+            const wsSales = parseInt(wholesaleSalesInput.value) || 0;
+
+            const totalBuyersCount = rSales + (wsSales > 0 ? wsWalk : 0);
+            const lost = Math.max(0, totalWalkins - totalBuyersCount);
+
+            document.getElementById('liveLostCount').innerText = `${lost} ဦး`;
+
+            let reasonsSum = 0;
+            reasonInputs.forEach(input => {
+                reasonsSum += parseInt(input.value) || 0;
+            });
+
+            const trackerText = document.getElementById('liveReasonTracker');
+            trackerText.innerText = `ဖြည့်ပြီး- ${reasonsSum} / ခန့်မှန်းကျန်- ${lost}`;
+
+            if (reasonsSum > lost && lost > 0) {
+                trackerText.className = "text-xs font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200";
+            } else if (reasonsSum === lost && lost > 0) {
+                trackerText.className = "text-xs font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded border border-green-200";
+            } else {
+                trackerText.className = "text-xs font-bold text-gray-500";
+            }
+        }
+
+        [retailWalkinInput, wholesaleWalkinInput, retailSalesInput, wholesaleSalesInput].forEach(inp => inp.addEventListener('input', calculateLiveStats));
+        reasonInputs.forEach(inp => inp.addEventListener('input', calculateLiveStats));
+
+        dataForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const branch = branchInput.value;
+            const date = document.getElementById('reportDate').value;
+            const key = `${date}_${branch}`;
+
+            const retailWalkin = parseInt(retailWalkinInput.value) || 0;
+            const wholesaleWalkin = parseInt(wholesaleWalkinInput.value) || 0;
+            const retailSales = parseInt(retailSalesInput.value) || 0;
+            const wholesaleSales = parseInt(wholesaleSalesInput.value) || 0;
+
+            const totalCustomers = retailWalkin + wholesaleWalkin;
+            const totalSales = retailSales + wholesaleSales;
+            
+            const noStock = parseInt(document.getElementById('reasonNoStock').value) || 0;
+            const stockBikeDetails = document.getElementById('stockBikeDetails').value.trim();
+            const highPrice = parseInt(document.getElementById('reasonHighPrice').value) || 0;
+            const installment = parseInt(document.getElementById('reasonInstallment').value) || 0;
+            const justInquiry = parseInt(document.getElementById('reasonJustInquiry').value) || 0;
+            const others = parseInt(document.getElementById('reasonOthers').value) || 0;
+            const note = document.getElementById('managerNote').value.trim();
+
+            const newEntry = {
+                key,
+                branch,
+                date,
+                customers: { retail: retailWalkin, wholesale: wholesaleWalkin, total: totalCustomers },
+                sales: { retail: retailSales, wholesale: wholesaleSales, total: totalSales },
+                note,
+                reasons: { noStock, stockBikeDetails, highPrice, installment, justInquiry, others }
+            };
+
+            if (editOriginalKey.value && editOriginalKey.value !== key) {
+                appData = appData.filter(item => (item.key || `${item.date}_${item.branch || 'ရွှေနတ်တောင်'}`) !== editOriginalKey.value);
+            }
+
+            const existingIndex = appData.findIndex(item => (item.key || `${item.date}_${item.branch || 'ရွှေနတ်တောင်'}`) === key);
+            if (existingIndex !== -1) {
+                appData[existingIndex] = newEntry;
+            } else {
+                appData.push(newEntry);
+            }
+
+            appData.sort((a, b) => new Date(b.date) - new Date(a.date));
+            saveToStorage();
+            
+            resetForm();
+            updateDashboard();
+        });
+
+        function saveToStorage() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+        }
+
+        function resetForm() {
+            dataForm.reset();
+            document.getElementById('reportDate').valueAsDate = new Date();
+            retailWalkinInput.value = 0;
+            wholesaleWalkinInput.value = 0;
+            retailSalesInput.value = 0;
+            wholesaleSalesInput.value = 0;
+            document.getElementById('reasonNoStock').value = 0;
+            document.getElementById('reasonHighPrice').value = 0;
+            document.getElementById('reasonInstallment').value = 0;
+            document.getElementById('reasonJustInquiry').value = 0;
+            document.getElementById('reasonOthers').value = 0;
+            
+            formTitle.innerText = "နေ့စဉ် ဒေတာသွင်းခြင်း";
+            editModeBadge.classList.add('hidden');
+            cancelEditBtn.classList.add('hidden');
+            editOriginalKey.value = '';
+            calculateLiveStats();
+        }
+
+        cancelEditBtn.addEventListener('click', resetForm);
+
+        function editEntry(key) {
+            const entry = appData.find(item => (item.key || `${item.date}_${item.branch || 'ရွှေနတ်တောင်'}`) === key);
+            if (!entry) return;
+
+            formTitle.innerText = "မှတ်တမ်းပြင်ဆင်ခြင်း";
+            editModeBadge.classList.remove('hidden');
+            cancelEditBtn.classList.remove('hidden');
+            editOriginalKey.value = key;
+
+            branchInput.value = entry.branch || 'ရွှေနတ်တောင်';
+            document.getElementById('reportDate').value = entry.date;
+            
+            retailWalkinInput.value = entry.customers ? entry.customers.retail : (entry.totalCustomers || 0);
+            wholesaleWalkinInput.value = entry.customers ? entry.customers.wholesale : 0;
+            retailSalesInput.value = entry.sales ? entry.sales.retail : (entry.salesClosed || 0);
+            wholesaleSalesInput.value = entry.sales ? entry.sales.wholesale : 0;
+
+            document.getElementById('reasonNoStock').value = entry.reasons.noStock;
+            document.getElementById('stockBikeDetails').value = entry.reasons.stockBikeDetails || '';
+            document.getElementById('reasonHighPrice').value = entry.reasons.highPrice;
+            document.getElementById('reasonInstallment').value = entry.reasons.installment;
+            document.getElementById('reasonJustInquiry').value = entry.reasons.justInquiry;
+            document.getElementById('reasonOthers').value = entry.reasons.others;
+            document.getElementById('managerNote').value = entry.note || '';
+
+            calculateLiveStats();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function resetMonthFilter() {
+            document.getElementById('monthFilter').value = '';
+            updateDashboard();
+        }
+
+        function updateDashboard() {
+            const selectedMonth = document.getElementById('monthFilter').value;
+            const selectedBranch = document.getElementById('branchFilter').value;
+            const tableBody = document.getElementById('logsTableBody');
+            tableBody.innerHTML = '';
+
+            let filteredData = appData;
+
+            if (selectedBranch !== 'ALL') {
+                filteredData = filteredData.filter(item => (item.branch || 'ရွှေနတ်တောင်') === selectedBranch);
+            }
+
+            if (selectedMonth) {
+                filteredData = filteredData.filter(item => item.date.startsWith(selectedMonth));
+            }
+
+            let sumTotalWalkin = 0, sumRetailWalkin = 0, sumWsWalkin = 0;
+            let sumTotalSales = 0, sumRetailSales = 0, sumWsSales = 0;
+            let sumNoStock = 0, sumHighPrice = 0, sumInstallment = 0, sumJustInquiry = 0, sumOthers = 0;
+
+            filteredData.forEach((entry) => {
+                const itemKey = entry.key || `${entry.date}_${entry.branch || 'ရွှေနတ်တောင်'}`;
+                
+                const totalWalkin = entry.customers ? entry.customers.total : (entry.totalCustomers || 0);
+                const retailWalkin = entry.customers ? entry.customers.retail : (entry.totalCustomers || 0);
+                const wsWalkin = entry.customers ? entry.customers.wholesale : 0;
+
+                const totalSales = entry.sales ? entry.sales.total : (entry.salesClosed || 0);
+                const retailSales = entry.sales ? entry.sales.retail : (entry.salesClosed || 0);
+                const wsSales = entry.sales ? entry.sales.wholesale : 0;
+
+                const rate = totalWalkin > 0 ? ((totalSales / totalWalkin) * 100).toFixed(1) : 0;
+
+                sumTotalWalkin += totalWalkin;
+                sumRetailWalkin += retailWalkin;
+                sumWsWalkin += wsWalkin;
+
+                sumTotalSales += totalSales;
+                sumRetailSales += retailSales;
+                sumWsSales += wsSales;
+
+                sumNoStock += entry.reasons.noStock;
+                sumHighPrice += entry.reasons.highPrice;
+                sumInstallment += entry.reasons.installment;
+                sumJustInquiry += entry.reasons.justInquiry;
+                sumOthers += entry.reasons.others;
+
+                const bikeDetailsStr = entry.reasons.stockBikeDetails ? ` <span class="text-blue-600 block text-[10px] font-bold">(${entry.reasons.stockBikeDetails})</span>` : '';
+
+                const row = `
+                    <tr class="hover:bg-gray-50 font-medium border-b">
+                        <td class="p-3">${entry.date}</td>
+                        <td class="p-3"><span class="px-2 py-0.5 rounded text-[11px] font-bold ${entry.branch === 'မရမ်းကုန်း' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'}">${entry.branch || 'ရွှေနတ်တောင်'}</span></td>
+                        <td class="p-3">${totalWalkin} <span class="text-[10px] text-gray-500">(${retailWalkin}/${wsWalkin})</span></td>
+                        <td class="p-3 text-green-600 font-bold">${totalSales} <span class="text-[10px] text-green-700">(${retailSales}/${wsSales})</span></td>
+                        <td class="p-3 font-bold text-slate-700">${rate}%</td>
+                        <td class="p-3 text-gray-500">${entry.reasons.noStock}${bikeDetailsStr}</td>
+                        <td class="p-3 text-gray-500">${entry.reasons.highPrice}</td>
+                        <td class="p-3 text-gray-500">${entry.reasons.installment}</td>
+                        <td class="p-3 text-gray-500">${entry.reasons.justInquiry}</td>
+                        <td class="p-3 text-gray-500">${entry.reasons.others}</td>
+                        <td class="p-3 text-center no-print flex gap-1 justify-center">
+                            <button onclick="editEntry('${itemKey}')" class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-2 py-1 rounded text-xs transition">
+                                ပြင်ရန်
+                            </button>
+                            <button onclick="printDailyReport('${itemKey}')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-2 py-1 rounded text-xs transition">
+                                ထုတ်ရန်
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                tableBody.innerHTML += row;
+            });
+
+            const overallRate = sumTotalWalkin > 0 ? ((sumTotalSales / sumTotalWalkin) * 100).toFixed(1) : 0;
+
+            document.getElementById('sumTotalCustomers').innerText = sumTotalWalkin;
+            document.getElementById('sumWalkinSub').innerText = `Retail: ${sumRetailWalkin} | Wholesale: ${sumWsWalkin}`;
+            
+            document.getElementById('sumSalesClosed').innerText = sumTotalSales;
+            document.getElementById('sumSalesSub').innerText = `Retail: ${sumRetailSales} | Wholesale: ${sumWsSales}`;
+
+            document.getElementById('sumConversionRate').innerText = `${overallRate}%`;
+            document.getElementById('sumNoStock').innerText = sumNoStock;
+            document.getElementById('sumHighPrice').innerText = sumHighPrice;
+            document.getElementById('sumInstallment').innerText = sumInstallment;
+            document.getElementById('sumJustInquiry').innerText = sumJustInquiry;
+            document.getElementById('sumOthers').innerText = sumOthers;
+
+            renderMonthComparison(selectedMonth, selectedBranch, sumTotalWalkin, sumTotalSales, parseFloat(overallRate));
+        }
+
+        function renderMonthComparison(selectedMonth, selectedBranch, currentTotal, currentClosed, currentRate) {
+            const comparisonBox = document.getElementById('comparisonBox');
+            if (!selectedMonth) {
+                comparisonBox.classList.add('hidden');
+                return;
+            }
+
+            const [year, month] = selectedMonth.split('-').map(Number);
+            const prevDateObj = new Date(year, month - 2, 1);
+            const prevYear = prevDateObj.getFullYear();
+            const prevMonthStr = String(prevDateObj.getMonth() + 1).padStart(2, '0');
+            const prevMonthKey = `${prevYear}-${prevMonthStr}`;
+
+            let prevData = appData.filter(item => item.date.startsWith(prevMonthKey));
+            if (selectedBranch !== 'ALL') {
+                prevData = prevData.filter(item => (item.branch || 'ရွှေနတ်တောင်') === selectedBranch);
+            }
+
+            if (prevData.length === 0) {
+                comparisonBox.classList.remove('hidden');
+                document.getElementById('comparisonTitle').innerText = `${selectedMonth} (${selectedBranch}) နှင့် နှိုင်းယှဉ်ရန် ယခင်လ (${prevMonthKey}) စာရင်းမရှိသေးပါ။`;
+                document.getElementById('cmpWalkinDiff').innerText = "N/A";
+                document.getElementById('cmpSalesDiff').innerText = "N/A";
+                document.getElementById('cmpRateDiff').innerText = "N/A";
+                return;
+            }
+
+            let prevTotal = 0, prevClosed = 0;
+            prevData.forEach(item => {
+                prevTotal += item.customers ? item.customers.total : (item.totalCustomers || 0);
+                prevClosed += item.sales ? item.sales.total : (item.salesClosed || 0);
+            });
+            const prevRate = prevTotal > 0 ? (prevClosed / prevTotal) * 100 : 0;
+
+            const walkinDiff = currentTotal - prevTotal;
+            const salesDiff = currentClosed - prevClosed;
+            const rateDiff = (currentRate - prevRate).toFixed(1);
+
+            comparisonBox.classList.remove('hidden');
+            document.getElementById('comparisonTitle').innerText = `${selectedMonth} (${selectedBranch}) နှင့် ယခင်လ (${prevMonthKey}) နှိုင်းယှဉ်ချက်`;
+
+            formatDiffUI('cmpWalkinDiff', walkinDiff, 'ဦး');
+            formatDiffUI('cmpSalesDiff', salesDiff, 'စီး');
+            formatDiffUI('cmpRateDiff', rateDiff, '%');
+        }
+
+        function formatDiffUI(elementId, value, unit) {
+            const el = document.getElementById(elementId);
+            if (value > 0) {
+                el.className = "text-lg font-bold mt-1 text-green-400";
+                el.innerText = `+${value} ${unit} (တိုးတက်)`;
+            } else if (value < 0) {
+                el.className = "text-lg font-bold mt-1 text-red-400";
+                el.innerText = `${value} ${unit} (လျော့ကျ)`;
+            } else {
+                el.className = "text-lg font-bold mt-1 text-slate-300";
+                el.innerText = `0 ${unit} (ပြောင်းလဲမှုမရှိ)`;
+            }
+        }
+
+        function exportJSONBackup() {
+            if (appData.length === 0) {
+                alert("ထုတ်ယူရန် ဒေတာ မရှိသေးပါ။");
+                return;
+            }
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appData, null, 2));
+            const downloadAnchor = document.createElement('a');
+            const dateStr = new Date().toISOString().slice(0, 10);
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `M26_Showroom_Data_Backup_${dateStr}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function importJSONBackup(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    if (Array.isArray(importedData)) {
+                        let importedCount = 0;
+                        importedData.forEach(newEntry => {
+                            const key = newEntry.key || `${newEntry.date}_${newEntry.branch || 'ရွှေနတ်တောင်'}`;
+                            newEntry.key = key;
+                            newEntry.branch = newEntry.branch || 'ရွှေနတ်တောင်';
+                            
+                            const index = appData.findIndex(item => (item.key || `${item.date}_${item.branch || 'ရွှေနတ်တောင်'}`) === key);
+                            if (index !== -1) {
+                                appData[index] = newEntry; 
+                            } else {
+                                appData.push(newEntry); 
+                            }
+                            importedCount++;
+                        });
+                        appData.sort((a, b) => new Date(b.date) - new Date(a.date));
+                        saveToStorage();
+                        updateDashboard();
+                        alert(`အောင်မြင်ပါသည်! မှတ်တမ်းပေါင်း ${importedCount} ခုကို စနစ်အတွင်း ပြန်လည်ဖြည့်သွင်းပြီးပါပြီ။`);
+                    } else {
+                        alert("မှားယွင်းသော ဒေတာ Format ဖြစ်နေပါသည်။");
+                    }
+                } catch (err) {
+                    alert("ဖိုင်ဖွင့်၍ မရပါ။ JSON ဖိုင် အမှန်ဖြစ်ကြောင်း စစ်ဆေးပါ။");
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+
+        function exportExcelCSV() {
+            if (appData.length === 0) {
+                alert("ထုတ်ယူရန် ဒေတာ မရှိသေးပါ။");
+                return;
+            }
+
+            let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; 
+            csvContent += "Date,Branch,Retail Walkins,Wholesale Walkins,Total Walkins,Retail Sales,Wholesale Sales,Total Sales Units,Conversion Rate %,Stock Out Count,Stock Out Details,High Price,Installment,Just Inquiry,Others,Manager Note\n";
+
+            appData.forEach(row => {
+                const totalWalkin = row.customers ? row.customers.total : (row.totalCustomers || 0);
+                const retailWalkin = row.customers ? row.customers.retail : (row.totalCustomers || 0);
+                const wsWalkin = row.customers ? row.customers.wholesale : 0;
+
+                const totalSales = row.sales ? row.sales.total : (row.salesClosed || 0);
+                const retailSales = row.sales ? row.sales.retail : (row.salesClosed || 0);
+                const wsSales = row.sales ? row.sales.wholesale : 0;
+
+                const rate = totalWalkin > 0 ? ((totalSales / totalWalkin) * 100).toFixed(1) : 0;
+                const cleanNote = `"${(row.note || '').replace(/"/g, '""')}"`;
+                const cleanBike = `"${(row.reasons.stockBikeDetails || '').replace(/"/g, '""')}"`;
+                
+                csvContent += `${row.date},${row.branch || 'ရွှေနတ်တောင်'},${retailWalkin},${wsWalkin},${totalWalkin},${retailSales},${wsSales},${totalSales},${rate}%,${row.reasons.noStock},${cleanBike},${row.reasons.highPrice},${row.reasons.installment},${row.reasons.justInquiry},${row.reasons.others},${cleanNote}\n`;
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `M26_Showroom_Report_${new Date().toISOString().slice(0, 10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        }
+
+        function printDailyReport(key) {
+            const data = appData.find(item => (item.key || `${item.date}_${item.branch || 'ရွှေနတ်တောင်'}`) === key);
+            if (!data) return;
+
+            const totalWalkin = data.customers ? data.customers.total : (data.totalCustomers || 0);
+            const retailWalkin = data.customers ? data.customers.retail : (data.totalCustomers || 0);
+            const wsWalkin = data.customers ? data.customers.wholesale : 0;
+
+            const totalSales = data.sales ? data.sales.total : (data.salesClosed || 0);
+            const retailSales = data.sales ? data.sales.retail : (data.salesClosed || 0);
+            const wsSales = data.sales ? data.sales.wholesale : 0;
+
+            const rate = totalWalkin > 0 ? ((totalSales / totalWalkin) * 100).toFixed(1) : 0;
+            const lost = Math.max(0, totalWalkin - (retailSales + (wsSales > 0 ? wsWalkin : 0)));
+
+            document.getElementById('printReportBranch').innerText = `ဆိုင်ခွဲ - ${data.branch || 'ရွှေနတ်တောင်'}`;
+            document.getElementById('printReportDate').innerText = `နေ့စွဲ - ${data.date}`;
+            document.getElementById('printTotalWalkin').innerText = `${totalWalkin} ဦး`;
+            document.getElementById('printWalkinBreakdown').innerText = `(Retail: ${retailWalkin} | Wholesale: ${wsWalkin})`;
+            
+            document.getElementById('printSalesClosed').innerText = `${totalSales} စီး`;
+            document.getElementById('printSalesBreakdown').innerText = `(Retail: ${retailSales} | Wholesale: ${wsSales})`;
+
+            document.getElementById('printConvRate').innerText = `${rate}%`;
+            document.getElementById('printTotalLost').innerText = `${lost} ဦး`;
+            
+            document.getElementById('printNoStock').innerText = `${data.reasons.noStock} ဦး`;
+            
+            const detailDiv = document.getElementById('printStockDetails');
+            if (data.reasons.stockBikeDetails) {
+                detailDiv.innerText = `⚠️ လိုချင်သည့်အမျိုးအစားမှတ်စု - ${data.reasons.stockBikeDetails}`;
+                detailDiv.classList.remove('hidden');
+            } else {
+                detailDiv.classList.add('hidden');
+            }
+
+            document.getElementById('printHighPrice').innerText = `${data.reasons.highPrice} ဦး`;
+            document.getElementById('printInstallment').innerText = `${data.reasons.installment || 0} ဦး`;
+            document.getElementById('printInquiry').innerText = `${data.reasons.justInquiry} ဦး`;
+            document.getElementById('printOthers').innerText = `${data.reasons.others} ဦး`;
+            
+            document.getElementById('printManagerNote').innerText = data.note ? data.note : "မှတ်ချက်မရှိပါ။";
+
+            const reportDiv = document.getElementById('printableReport');
+            reportDiv.classList.remove('hidden');
+            window.print();
+            reportDiv.classList.add('hidden');
+        }
+
+        function printMonthlySummaryReport() {
+            const selectedMonth = document.getElementById('monthFilter').value;
+            const selectedBranch = document.getElementById('branchFilter').value;
+
+            let filteredData = appData;
+
+            if (selectedBranch !== 'ALL') {
+                filteredData = filteredData.filter(item => (item.branch || 'ရွှေနတ်တောင်') === selectedBranch);
+            }
+            
+            if (selectedMonth) {
+                filteredData = filteredData.filter(item => item.date.startsWith(selectedMonth));
+            }
+
+            if (filteredData.length === 0) {
+                alert("ရွေးချယ်ထားသော ကာလ/ဆိုင်ခွဲတွင် ထုတ်ရန် စာရင်းမရှိသေးပါ။");
+                return;
+            }
+
+            let totalWalkin = 0, retailWalkin = 0, wsWalkin = 0;
+            let totalSales = 0, retailSales = 0, wsSales = 0;
+            let stockOutModels = [];
+
+            filteredData.forEach(item => {
+                const tw = item.customers ? item.customers.total : (item.totalCustomers || 0);
+                const rw = item.customers ? item.customers.retail : (item.totalCustomers || 0);
+                const ww = item.customers ? item.customers.wholesale : 0;
+
+                const ts = item.sales ? item.sales.total : (item.salesClosed || 0);
+                const rs = item.sales ? item.sales.retail : (item.salesClosed || 0);
+                const ws = item.sales ? item.sales.wholesale : 0;
+
+                totalWalkin += tw;
+                retailWalkin += rw;
+                wsWalkin += ww;
+
+                totalSales += ts;
+                retailSales += rs;
+                wsSales += ws;
+
+                if (item.reasons.stockBikeDetails) {
+                    stockOutModels.push(`[${item.branch || 'ရွှေနတ်တောင်'}] ${item.date}: ${item.reasons.stockBikeDetails} (${item.reasons.noStock} ဦးမေး)`);
+                }
+            });
+
+            const overallRate = totalWalkin > 0 ? ((totalSales / totalWalkin) * 100).toFixed(1) : 0;
+
+            document.getElementById('printMonthlyReportBranch').innerText = `ဆိုင်ခွဲ - ${selectedBranch === 'ALL' ? 'ဆိုင်ခွဲအားလုံး ပေါင်းစပ်အစီရင်ခံစာ' : selectedBranch}`;
+            document.getElementById('printMonthlyReportMonth').innerText = selectedMonth ? `ကာလ - ${selectedMonth}` : 'ကာလ - မှတ်တမ်းတစ်ခုလုံး အချုပ်';
+            document.getElementById('printMSumWalkin').innerText = totalWalkin;
+            document.getElementById('printMSumWalkinSub').innerText = `(Retail: ${retailWalkin} | Wholesale: ${wsWalkin})`;
+            
+            document.getElementById('printMSumSales').innerText = totalSales;
+            document.getElementById('printMSumSalesSub').innerText = `(Retail: ${retailSales} | Wholesale: ${wsSales})`;
+            
+            document.getElementById('printMSumRate').innerText = `${overallRate}%`;
+
+            const stockListContainer = document.getElementById('printMonthlyStockList');
+            stockListContainer.innerHTML = '';
+            
+            if (stockOutModels.length > 0) {
+                stockOutModels.forEach(modelStr => {
+                    stockListContainer.innerHTML += `<li>${modelStr}</li>`;
+                });
+            } else {
+                stockListContainer.innerHTML = '<li>စတော့မရှိ၍ လက်လွတ်သွားသော မှတ်တမ်း မရှိပါ။</li>';
+            }
+
+            const printDiv = document.getElementById('printableMonthlyReport');
+            printDiv.classList.remove('hidden');
+            window.print();
+            printDiv.classList.add('hidden');
+        }
+
+        function clearData() {
+            if (confirm("မှတ်တမ်းအားလုံးကို ဖျက်ပစ်ရန် သေချာပါသလား?")) {
+                localStorage.removeItem(STORAGE_KEY);
+                appData = [];
+                updateDashboard();
+            }
+        }
+
+        updateDashboard();
+    </script>
+</body>
+</html>
